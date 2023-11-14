@@ -44,7 +44,7 @@ def promptchatgpt(user_prompt): # Check https://platform.openai.com/docs/guides/
 
 if __name__ == "__main__":
 
-    user_prompt = "Hi Chatbot! How are you doing today?"
+    user_prompt = "Hi Chatbot! Please tell me a story about the beginning of winter?"
 
     response = promptchatgpt(user_prompt)
 
