@@ -1,0 +1,57 @@
+from pathlib import Path
+from openai import OpenAI
+import sounddevice as sd
+import soundfile as sf
+import json
+
+
+def texttospeech(speech):
+
+    client = OpenAI(api_key="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")
+
+    # Access the content
+    content = speech.choices[0].message.content # Check https://platform.openai.com/docs/guides/text-generation
+
+    speech_file_path = Path(__file__).parent / "speech.mp3"
+    response = client.audio.speech.create(
+      model="tts-1",
+      voice="alloy",
+      input=content
+    )
+
+    response.stream_to_file(speech_file_path)
+
+    return speech_file_path
+
+def playaudio(file_path): # Check https://python-sounddevice.readthedocs.io/en/0.4.6/examples.html
+    data, fs = sf.read(file_path)
+    sd.play(data, fs)
+    status = sd.wait()  # Wait until file is done playing
+    return status
+
+def promptchatgpt(user_prompt): # Check https://platform.openai.com/docs/guides/text-generation
+    client = OpenAI(api_key="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")
+
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": user_prompt}
+        ]
+    )
+
+    return response
+
+if __name__ == "__main__":
+
+    user_prompt = "Hi Chatbot! How are you doing today?"
+
+    response = promptchatgpt(user_prompt)
+
+    print(type(response))
+
+    speech_file_path = texttospeech(response)
+
+    playaudio(speech_file_path)
+
+    print("Done!")
