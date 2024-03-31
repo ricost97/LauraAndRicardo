@@ -2,6 +2,7 @@ from pathlib import Path
 from openai import OpenAI
 import sounddevice as sd
 import soundfile as sf
+import speech_recognition as sr
 import json
 
 
@@ -42,9 +43,90 @@ def promptchatgpt(user_prompt): # Check https://platform.openai.com/docs/guides/
 
     return response
 
+def listen_for_wake_word(wake_word="hey chatgpt"):
+
+    client = OpenAI(api_key="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")
+
+    audio_file_path= "C:\\Users\\betsy\\OneDrive\\Desktop\\Laura\\LauraAndRicardo\\wake_audio.mp3"
+
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)
+        print("Listening for wake word...")
+
+        while True:  # Continuous listening loop
+            try:
+                # Listen for the first phrase and extract it into audio data
+                audio_data = recognizer.listen(source, timeout=4)
+                print("Processing audio...")
+                # Save the audio to a file
+                with open(audio_file_path, "wb") as audio_file:
+                    audio_file.write(audio_data.get_wav_data())
+                # Transform speech to text using OpenAi Speech API
+                    transcription = client.audio.transcriptions.create(
+                    model="whisper-1", 
+                    file=audio_file
+                    )
+                print(f"Recognized: {transcription.text}")
+
+                # Check if the recognized text contains the wake word
+                if wake_word in transcription.text:
+                    print("Wake word detected!")
+                    return True
+            except sr.WaitTimeoutError:
+                print("Listening timeout, retrying...")
+                continue
+            except sr.UnknownValueError:
+                print("Could not understand audio, retrying...")
+                continue
+            except sr.RequestError as e:
+                print(f"Could not request results; {e}")
+                continue
+
+def listen_for_prompt():
+
+    client = OpenAI(api_key="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")
+
+    audio_file_path= "C:\\Users\\betsy\\OneDrive\\Desktop\\Laura\\LauraAndRicardo\\prompt_audio.mp3"
+
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)
+        print("Listening for wake word...")
+
+        while True:  # Continuous listening loop
+            try:
+                # Listen for the first phrase and extract it into audio data
+                audio_data = recognizer.listen(source, timeout=10)
+                print("Processing audio...")
+                # Save the audio to a file
+                with open(audio_file_path, "wb") as audio_file:
+                    audio_file.write(audio_data.get_wav_data())
+                # Transform speech to text using OpenAi Speech API
+                    transcription = client.audio.transcriptions.create(
+                    model="whisper-1", 
+                    file=audio_file
+                    )
+                print(f"Recognized: {transcription.text}")
+
+                print("Prompt recognizd!")
+                return transcription.text
+            except sr.WaitTimeoutError:
+                print("Listening timeout, retrying...")
+                continue
+            except sr.UnknownValueError:
+                print("Could not understand audio, retrying...")
+                continue
+            except sr.RequestError as e:
+                print(f"Could not request results; {e}")
+                continue
+
 if __name__ == "__main__":
 
-    user_prompt = "Hi Chatbot! Please tell me a story about the beginning of winter?"
+    user_prompt = "" # "Hi Chatbot! Please tell me a story about the beginning of winter?"
+
+    if listen_for_wake_word(wake_word="hey chatgpt") == True:
+        user_prompt = listen_for_prompt()
 
     response = promptchatgpt(user_prompt)
 
