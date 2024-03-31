@@ -4,11 +4,12 @@ import sounddevice as sd
 import soundfile as sf
 import speech_recognition as sr
 import json
+import os
 
 
 def texttospeech(speech):
 
-    client = OpenAI(api_key="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")
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     # Access the content
     content = speech.choices[0].message.content # Check https://platform.openai.com/docs/guides/text-generation
@@ -31,7 +32,7 @@ def playaudio(file_path): # Check https://python-sounddevice.readthedocs.io/en/0
     return status
 
 def promptchatgpt(user_prompt): # Check https://platform.openai.com/docs/guides/text-generation
-    client = OpenAI(api_key="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")
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -43,9 +44,9 @@ def promptchatgpt(user_prompt): # Check https://platform.openai.com/docs/guides/
 
     return response
 
-def listen_for_wake_word(wake_word="hey chatgpt"):
+def listen_for_wake_word(wake_word):
 
-    client = OpenAI(api_key="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")
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     audio_file_path= "C:\\Users\\betsy\\OneDrive\\Desktop\\Laura\\LauraAndRicardo\\wake_audio.mp3"
 
@@ -71,7 +72,7 @@ def listen_for_wake_word(wake_word="hey chatgpt"):
                 print(f"Recognized: {transcription.text}")
 
                 # Check if the recognized text contains the wake word
-                if wake_word in transcription.text:
+                if wake_word in str.lower(transcription.text):
                     print("Wake word detected!")
                     return True
             except sr.WaitTimeoutError:
@@ -86,7 +87,7 @@ def listen_for_wake_word(wake_word="hey chatgpt"):
 
 def listen_for_prompt():
 
-    client = OpenAI(api_key="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")
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     audio_file_path= "C:\\Users\\betsy\\OneDrive\\Desktop\\Laura\\LauraAndRicardo\\prompt_audio.mp3"
 
@@ -127,15 +128,19 @@ if __name__ == "__main__":
 
     user_prompt = ""
 
-    if listen_for_wake_word(wake_word="Hello") == True:
-        user_prompt = listen_for_prompt()
+    while True:
 
-    response = promptchatgpt(user_prompt)
+        if listen_for_wake_word(wake_word="hello") == True:
+            user_prompt += listen_for_prompt()
 
-    print(type(response))
+        response = promptchatgpt(user_prompt)
 
-    speech_file_path = texttospeech(response)
+        user_prompt += response.choices[0].message.content
 
-    playaudio(speech_file_path)
+        print(type(response))
 
-    print("Done!")
+        speech_file_path = texttospeech(response)
+
+        playaudio(speech_file_path)
+
+        print("Done!")
